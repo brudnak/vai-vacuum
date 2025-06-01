@@ -28,7 +28,7 @@ Do NOT commit the binary to git. Instead:
 
 Example URL format:
 ```
-https://github.com/YOUR-ORG/YOUR-REPO/releases/download/v1.0.0/vai-vacuum
+https://github.com/brudnak/vai-vacuum/releases/download/v1.0.0-beta/vai-vacuum
 ```
 
 ## Usage
@@ -38,11 +38,38 @@ The binary is used by VAI tests to extract database snapshots from running Ranch
 ```bash
 # Download, run, and save snapshot to a file
 kubectl exec <pod> -n cattle-system -c rancher -- sh -c \
-  "curl -L -o /tmp/vai-vacuum <RELEASE-URL> && chmod +x /tmp/vai-vacuum && /tmp/vai-vacuum" \
+  "curl -kL -o /tmp/vai-vacuum <RELEASE-URL> && chmod +x /tmp/vai-vacuum && /tmp/vai-vacuum" \
   | base64 -d > snapshot.db
 ```
 
-The output is pure base64 which can be decoded to get the SQLite database file.
+Note: The `-k` flag is required for curl to bypass SSL certificate verification in container environments.
+
+### Verify the snapshot
+
+```bash
+# List all tables
+sqlite3 snapshot.db ".tables"
+
+# Example output:
+# *v1*Endpoints
+# *v1*Event
+# *v1*Namespace
+# *v1*Node
+# cluster.x-k8s.io_v1beta1_Machine
+# management.cattle.io_v3_Cluster
+# management.cattle.io_v3_FleetWorkspace
+# management.cattle.io_v3_Node
+# management.cattle.io_v3_Project
+# management.cattle.io_v3_Setting
+# provisioning.cattle.io_v1_Cluster
+# ... and many more
+
+# Check database integrity
+sqlite3 snapshot.db "PRAGMA integrity_check;"
+
+# Count rows in a specific table
+sqlite3 snapshot.db "SELECT COUNT(*) FROM management.cattle.io_v3_Cluster;"
+```
 
 ## Dependencies
 
@@ -103,7 +130,7 @@ sqlite3 output.db "SELECT * FROM test;"
 
 ```go
 const (
-    vaiDBPath = "/var/lib/rancher/informer_object_cache.db"
+vaiDBPath = "/var/lib/rancher/informer_object_cache.db"
 ```
 
 Then build the Linux version for deployment:
