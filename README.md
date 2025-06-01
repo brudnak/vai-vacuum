@@ -36,9 +36,10 @@ https://github.com/YOUR-ORG/YOUR-REPO/releases/download/v1.0.0/vai-vacuum
 The binary is used by VAI tests to extract database snapshots from running Rancher pods:
 
 ```bash
-# Download and run on a pod
+# Download, run, and save snapshot to a file
 kubectl exec <pod> -n cattle-system -c rancher -- sh -c \
-  "curl -L -o /tmp/vai-vacuum <RELEASE-URL> && chmod +x /tmp/vai-vacuum && /tmp/vai-vacuum"
+  "curl -L -o /tmp/vai-vacuum <RELEASE-URL> && chmod +x /tmp/vai-vacuum && /tmp/vai-vacuum" \
+  | base64 -d > snapshot.db
 ```
 
 The output is pure base64 which can be decoded to get the SQLite database file.
